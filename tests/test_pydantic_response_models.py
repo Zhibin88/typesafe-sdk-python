@@ -48,9 +48,9 @@ async def test_standalone_pydantic_response_model(clients: ClientFactory, extra_
     body = {**RESULT, "answers": {**RESULT["answers"], "spam": {**RESULT["answers"]["spam"], **extra_answer_fields}}}
     client = clients(lambda request: httpx2.Response(200, json=body))
     if isinstance(client, AsyncTypeSafeClient):
-        result = await client.system_one("x", {"spam": Noul()}, response_model=KnownResponse)
+        result = await client.system_one("x", {"spam": Noul(instructions="Spam?")}, response_model=KnownResponse)
     else:
-        result = client.system_one("x", {"spam": Noul()}, response_model=KnownResponse)
+        result = client.system_one("x", {"spam": Noul(instructions="Spam?")}, response_model=KnownResponse)
     assert type(result) is KnownResponse
     assert result.model == "jev-latest"
     assert result.answers.spam.noul == 0.98
@@ -60,9 +60,9 @@ async def test_standalone_pydantic_response_model(clients: ClientFactory, extra_
 async def test_explicit_default_response_model(clients: ClientFactory, response_model: type[SystemOneResponse] | None) -> None:
     client = clients(lambda request: httpx2.Response(200, json=RESULT, headers={"x-typesafe-request-id": "req-default"}))
     if isinstance(client, AsyncTypeSafeClient):
-        result = await client.system_one("x", {"spam": Noul()}, response_model=response_model)
+        result = await client.system_one("x", {"spam": Noul(instructions="Spam?")}, response_model=response_model)
     else:
-        result = client.system_one("x", {"spam": Noul()}, response_model=response_model)
+        result = client.system_one("x", {"spam": Noul(instructions="Spam?")}, response_model=response_model)
     assert isinstance(result, SystemOneResponse)
     assert result.nouls["spam"].noul == 0.98
     assert result.request_id == "req-default"
@@ -73,9 +73,9 @@ async def test_pydantic_system_one_response_subclass(clients: ClientFactory) -> 
     body = {**RESULT, "answers": {**RESULT["answers"], "future": {"type": "future", "value": 1}}}
     client = clients(lambda request: httpx2.Response(200, json=body, headers={"x-typesafe-request-id": "req-pydantic"}))
     if isinstance(client, AsyncTypeSafeClient):
-        result = await client.system_one("x", {"spam": Noul()}, response_model=TypedSystemOneResponse)
+        result = await client.system_one("x", {"spam": Noul(instructions="Spam?")}, response_model=TypedSystemOneResponse)
     else:
-        result = client.system_one("x", {"spam": Noul()}, response_model=TypedSystemOneResponse)
+        result = client.system_one("x", {"spam": Noul(instructions="Spam?")}, response_model=TypedSystemOneResponse)
     assert type(result) is TypedSystemOneResponse
     assert result.spam.noul == 0.98
     assert result.tone.choice == "friendly"
@@ -108,10 +108,10 @@ async def test_pydantic_response_validation(
     client = clients(lambda request: httpx2.Response(200, json=body, headers={"x-typesafe-request-id": "req-invalid"}))
     if isinstance(client, AsyncTypeSafeClient):
         with pytest.raises(TypeSafeAPIResponseValidationError) as caught:
-            await client.system_one("x", {"spam": Noul()}, response_model=response_model)
+            await client.system_one("x", {"spam": Noul(instructions="Spam?")}, response_model=response_model)
     else:
         with pytest.raises(TypeSafeAPIResponseValidationError) as caught:
-            client.system_one("x", {"spam": Noul()}, response_model=response_model)
+            client.system_one("x", {"spam": Noul(instructions="Spam?")}, response_model=response_model)
     assert caught.value.field_path == field_path
     assert caught.value.request_id == "req-invalid"
     assert caught.value.body == body
@@ -122,10 +122,10 @@ async def test_custom_response_preserves_api_errors(clients: ClientFactory) -> N
     client = clients(lambda request: httpx2.Response(400, json=body, headers={"x-typesafe-request-id": "req-error"}))
     if isinstance(client, AsyncTypeSafeClient):
         with pytest.raises(TypeSafeBadRequestError) as caught:
-            await client.system_one("x", {"spam": Noul()}, response_model=KnownResponse)
+            await client.system_one("x", {"spam": Noul(instructions="Spam?")}, response_model=KnownResponse)
     else:
         with pytest.raises(TypeSafeBadRequestError) as caught:
-            client.system_one("x", {"spam": Noul()}, response_model=KnownResponse)
+            client.system_one("x", {"spam": Noul(instructions="Spam?")}, response_model=KnownResponse)
     assert caught.value.status == 400
     assert caught.value.body == body
     assert caught.value.request_id == "req-error"

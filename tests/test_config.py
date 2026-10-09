@@ -168,3 +168,10 @@ async def test_http_client_timeout_precedence(
     assert requests[0].extensions["timeout"] == expected.as_dict()
     assert requests[1].extensions["timeout"] == default.as_dict()
     assert http_client.timeout == http_timeout
+
+
+@pytest.mark.parametrize("client_type", [TypeSafeClient, AsyncTypeSafeClient])
+def test_default_pool_keeps_idle_connections(client_type: type[TypeSafeClient | AsyncTypeSafeClient]) -> None:
+    pool = client_type(api_key="test")._http_client._transport._pool  # pyrefly: ignore[missing-attribute]
+    assert pool._max_keepalive_connections == pool._max_connections == 100
+    assert pool._keepalive_expiry == 30.0

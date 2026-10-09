@@ -84,7 +84,7 @@ def test_raw_questions_require_structural_keys(invalid: object) -> None:
 @pytest.mark.parametrize(
     "question,expected",
     [
-        (Noul(), {"type": "noul"}),
+        (Noul(criteria={"true": "spam"}), {"type": "noul", "criteria": {"true": "spam"}}),
         (Choice(criteria={"a": None}), {"type": "choice", "criteria": {"a": None}}),
         (Score(criteria=["good"]), {"type": "score", "criteria": ["good"]}),
         (Noul(instructions="", criteria={}), {"type": "noul", "instructions": "", "criteria": {}}),
@@ -163,15 +163,43 @@ def test_optional_noul_criteria(raw: bool, criteria: NoulCriteria | None) -> Non
 def test_typed_noul_criteria_reject_unknown_fields() -> None:
     criteria = cast(NoulCriteria, {"true": "yes", "metadata": {"source": None}})
     with pytest.raises(ValidationError, match="extra_forbidden"):
-        Noul(criteria=criteria)
+        Noul(instructions="Spam?", criteria=criteria)
+
+
+def test_empty_score_criteria_is_rejected() -> None:
+    with pytest.raises(ValidationError, match="too_short"):
+        Score(instructions="Quality?", criteria=[])
+    with pytest.raises(TypeSafeError, match='"rating" has no criteria'):
+        normalize_questions({"rating": {"type": "score", "instructions": "Quality?", "criteria": []}})
 
 
 @pytest.mark.parametrize("raw", [False, True])
-def test_empty_score_criteria_is_rejected(raw: bool) -> None:
-    model = cast(ScoreModel, {"type": "score", "instructions": "Quality?", "criteria": []})
-    question = model if raw else Score(instructions=model["instructions"], criteria=model["criteria"])
-    with pytest.raises(TypeSafeError, match='"rating" has no criteria'):
-        normalize_questions({"rating": question})
+def test_empty_choice_criteria_is_rejected(raw: bool) -> None:
+    model: ChoiceModel = {"type": "choice", "instructions": "Tone?", "criteria": {}}
+    question = model if raw else Choice(instructions=model["instructions"], criteria=model["criteria"])
+    with pytest.raises(TypeSafeError, match='"label" has no criteria'):
+        normalize_questions({"label": question})
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        Noul.model_validate({}),
+        Noul.model_validate({"criteria": {}}),
+        Noul.model_validate({"criteria": {"true": None, "false": None}}),
+        {"type": "noul"},
+        {"type": "noul", "instructions": None, "criteria": {}},
+        {"type": "noul", "criteria": {"true": None, "false": None}},
+    ],
+)
+def test_noul_without_instructions_or_criteria_is_rejected(question: Question) -> None:
+    with pytest.raises(TypeSafeError, match='"spam" has neither instructions nor criteria'):
+        normalize_questions({"spam": question})
+
+
+def test_raw_noul_criteria_must_be_an_object() -> None:
+    with pytest.raises(TypeSafeError, match='"spam" criteria must be an object'):
+        normalize_questions(cast(Questions, {"spam": {"type": "noul", "criteria": "spam"}}))
 
 
 async def test_covariant_question_mappings(clients: ClientFactory) -> None:

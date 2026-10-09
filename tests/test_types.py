@@ -70,7 +70,7 @@ async def test_array_inputs(clients: ClientFactory, raw: bool) -> None:
 
 async def test_raw_optional_fields_preserve_explicit_null(clients: ClientFactory) -> None:
     questions: Questions = {
-        "yes": {"type": "noul", "instructions": None, "criteria": None},
+        "yes": {"type": "noul", "instructions": None, "criteria": {"true": "spam", "false": None}},
         "label": {"type": "choice", "instructions": None, "criteria": {"a": None}},
         "rating": {"type": "score", "instructions": None, "criteria": ["good"]},
     }

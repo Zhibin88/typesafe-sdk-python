@@ -5,6 +5,21 @@ icon: lucide/history
 
 # Changelog
 
+## v0.7.3 (2026-10-09)
+
+### Bug fixes
+
+- prevent async client crashes during concurrent TLS connections with `truststore<=0.10.4`
+- add more request validation checks
+
+### Documentation
+
+- add a new Performance section with tips for high-concurrency usage
+
+### Performance
+
+- update the default settings to keep all pooled connections alive for 30 seconds
+
 ## v0.7.2 (2026-09-26)
 
 ### Miscellaneous

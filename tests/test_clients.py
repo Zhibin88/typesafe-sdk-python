@@ -270,18 +270,20 @@ async def test_invalid_models_response(clients: ClientFactory, body: object) -> 
 
 
 @pytest.mark.parametrize(
-    "questions,match",
+    "state,questions,match",
     [
-        ({}, "At least one question"),
-        ({"rating": Score(instructions="?", criteria=[])}, '"rating" has no criteria'),
+        ("x", {}, "At least one question"),
+        ("x", {"rating": {"type": "score", "instructions": "?", "criteria": []}}, '"rating" has no criteria'),
+        ("x", {"spam": Noul.model_validate({})}, '"spam" has neither instructions nor criteria'),
+        (None, {"spam": Noul(instructions="Spam?")}, "State is required"),
     ],
 )
-async def test_validation_before_network(clients: ClientFactory, questions: Any, match: str) -> None:
+async def test_validation_before_network(clients: ClientFactory, state: Any, questions: Any, match: str) -> None:
     def handler(request: httpx2.Request) -> httpx2.Response:
-        pytest.fail("Invalid questions reached the network")
+        pytest.fail("Invalid request reached the network")
 
     with pytest.raises(TypeSafeError, match=match):
-        await system_one(clients(handler), state="x", questions=questions)
+        await system_one(clients(handler), state=state, questions=questions)
 
 
 @pytest.mark.parametrize(
