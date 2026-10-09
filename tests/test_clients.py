@@ -161,6 +161,21 @@ async def test_unserializable_request_body_raises(clients: ClientFactory) -> Non
         )
 
 
+async def test_non_finite_numbers_are_stringified(clients: ClientFactory) -> None:
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        body = from_json(request.content, allow_inf_nan=False)
+        assert body["state"] == {"value": "NaN", "arr": [1.0, "Infinity", "-Infinity"]}
+        assert body["temperature"] == "NaN"
+        return httpx2.Response(200, content=to_json(RESULT))
+
+    await system_one(
+        clients(handler),
+        state={"value": float("nan"), "arr": [1.0, float("inf"), float("-inf")]},
+        questions={"q": {"type": "noul", "instructions": "?"}},
+        extra_body={"temperature": float("nan")},
+    )
+
+
 async def test_raw_question_passthrough(clients: ClientFactory) -> None:
     # Explicit escape hatch for fields introduced by the API before this SDK models them.
     questions = cast(

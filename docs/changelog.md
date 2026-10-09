@@ -5,6 +5,12 @@ icon: lucide/history
 
 # Changelog
 
+## v0.7.4 (2026-10-09)
+
+### Bug fixes
+
+- serialize non-finite numbers as strings instead of invalid JSON tokens
+
 ## v0.7.3 (2026-10-09)
 
 ### Bug fixes
